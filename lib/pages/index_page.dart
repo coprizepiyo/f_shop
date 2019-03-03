@@ -49,9 +49,7 @@ class _IndexPageState extends State<IndexPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color.fromRGBO(245, 245, 245, 1.0),
-      appBar: AppBar(
-        title: Text('购物'),
-      ),
+      
       body: currentPage,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
