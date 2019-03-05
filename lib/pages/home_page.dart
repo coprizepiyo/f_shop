@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
+import '../service/service_method.dart';
+import 'package:flutter_swiper/flutter_swiper.dart';
+import 'dart:convert';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -7,125 +10,65 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
- TextEditingController typeController =TextEditingController();
-  var defaultText = '还没选择美女';
+  String homePageContent = '正在获取数据';
+
+  @override
+  void initState() {
+    getHomePageContent().then((val){
+      setState(() {
+       homePageContent = val.toString(); 
+      });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('美好人间'),
+        title: Text('百姓生活+'),
       ),
-      body:Container(
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: typeController,
-              decoration: InputDecoration(
-                contentPadding: EdgeInsets.all(10.0),
-                labelText: '美女类型',
-                helperText: '请你输入你喜欢的类型'
-              ),
-              // autofocus: false,
-            ),
-            RaisedButton(
-              onPressed: (){
-                print('开始选择你喜欢的类型。。。。。。。');
-                var typeText = typeController.text.toString().trim();
-                if(typeText == ''){
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(title: Text('美女类型不能为空'),)
-                  );
-                } else {
-                  _getHttp(typeText).then(
-                    (val){
-                      setState((){
-                        print(val);
-                        defaultText = val['name'];
-                      });
-                    }
-                  );
-                }
-              },
-              child: Text('选择完毕'),
-            ),
-            Text(
-              defaultText,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            )
-          ],
-        ),
+      body: FutureBuilder(
+        future: getHomePageContent(),
+        builder: (BuildContext context, snapshot) {
+          if(snapshot.hasData){
+            var data = json.decode(snapshot.data.toString());
+            List<Map> swiper = (data['data']['slides'] as List).cast();
+            return Column(
+              children: <Widget>[
+                SwiperDiy(swiperDataList: swiper,)
+              ],
+            );
+          } else {
+            return Center(
+              child: Text('加载中'),
+            );
+          }
+        },
       )
     );
+  }
 }
 
-// class HomePage extends StatelessWidget {
-//   TextEditingController typeController =TextEditingController();
-//   var defaultText = '还没选择美女';
+class SwiperDiy extends StatelessWidget {
+  final List swiperDataList;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('美好人间'),
-//       ),
-//       body:Container(
-//         child: Column(
-//           children: <Widget>[
-//             TextField(
-//               controller: typeController,
-//               decoration: InputDecoration(
-//                 contentPadding: EdgeInsets.all(10.0),
-//                 labelText: '美女类型',
-//                 helperText: '请你输入你喜欢的类型'
-//               ),
-//               // autofocus: false,
-//             ),
-//             RaisedButton(
-//               onPressed: (){
-//                 print('开始选择你喜欢的类型。。。。。。。');
-//                 var typeText = typeController.text.toString().trim();
-//                 if(typeText == ''){
-//                   showDialog(
-//                     context: context,
-//                     builder: (context) => AlertDialog(title: Text('美女类型不能为空'),)
-//                   );
-//                 } else {
-//                   _getHttp(typeText).then(
-//                     (val){
-//                       setState((){
-//                         defaultText = val;
-//                       });
-//                     }
-//                   );
-//                 }
-//               },
-//               child: Text('选择完毕'),
-//             ),
-//             Text(
-//               defaultText,
-//               overflow: TextOverflow.ellipsis,
-//               maxLines: 1,
-//             )
-//           ],
-//         ),
-//       )
-//     );
-//   }
+  SwiperDiy({Key key, this.swiperDataList}) : super(key: key);
 
-  Future _getHttp(String typeText)async{
-    try{
-      Response response;
-      var data={'name': typeText};
-      response = await Dio().get(
-        "https://www.easy-mock.com/mock/5c60131a4bed3a6342711498/baixing/dabaojian",
-        queryParameters: data
-      );
-      return response.data['data'];
-    }catch(e){
-      return print(e);
-    }
+  @override
+  Widget build(BuildContext context) {
+    ScreenUtil.instance =ScreenUtil(width: 750, height: 1334)..init(context);
+    return Container(
+      height: ScreenUtil().setHeight(333),
+      width:ScreenUtil().setWidth(750),
+      child: Swiper(
+        itemBuilder: (BuildContext context, int index){
+          return Image.network(swiperDataList[index]['image'], fit: BoxFit.fill,);
+        },
+        itemCount: swiperDataList.length,
+        pagination: SwiperPagination(),
+        autoplay: true,
+      )
+    );
   }
 }
